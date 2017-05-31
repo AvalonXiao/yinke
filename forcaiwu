@@ -1,0 +1,31 @@
+# encoding=utf8
+
+import datetime
+import MySQLdb
+import csv
+import sys
+import codecs
+
+reload(sys)
+sys.setdefaultencoding('utf8')
+
+begin = datetime.date(2017, 1, 1)
+end = datetime.date(2017, 5, 1)
+csvfile = file(u'2017年常规加息成本数据.csv', 'wb')
+csvfile.write(codecs.BOM_UTF8)
+writer = csv.writer(csvfile)
+writer.writerow([u'日期', u'1月期存量', u'1月期成本', u'2月期存量', u'2月期成本', u'3月期存量', u'3月期成本', u'4月期存量', u'4月期成本', u'5月期存量', u'5月期成本', u'6月期存量', u'6月期成本', u'7月期存量', u'7月期成本', u'8月期存量', u'8月期成本', u'9月期存量', u'9月期成本', u'10月期存量', u'10月期成本', u'11月期存量', u'11月期成本', u'12月期存量', u'12月期成本', u'总成本'])
+coon = MySQLdb.connect(host='120.55.176.18', user='xmanread', passwd='LtLUGkNbr84UWXglBFYe4GuMX8EJXeIG', port=5306,
+                           charset='utf8', db='product')
+cursor = coon.cursor()
+
+for i in range((end - begin).days):
+    day = begin + datetime.timedelta(days=i)
+    sql = "SELECT \'"+str(day)+"\', sum((case when m.time=1 then m.amount else 0 end)), sum((case when m.time=1 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount1,sum((case when m.time=2 then m.amount else 0 end)), sum((case when m.time=2 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount2,sum((case when m.time=3 then m.amount else 0 end)), sum((case when m.time=3 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount3,sum((case when m.time=4 then m.amount else 0 end)), sum((case when m.time=4 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount4,sum((case when m.time=5 then m.amount else 0 end)), sum((case when m.time=5 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount5,sum((case when m.time=6 then m.amount else 0 end)), sum((case when m.time=6 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount6,sum((case when m.time=7 then m.amount else 0 end)), sum((case when m.time=7 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount7,sum((case when m.time=8 then m.amount else 0 end)), sum((case when m.time=8 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount8,sum((case when m.time=9 then m.amount else 0 end)), sum((case when m.time=9 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount9,sum((case when m.time=10 then m.amount else 0 end)), sum((case when m.time=10 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount10,sum((case when m.time=11 then m.amount else 0 end)), sum((case when m.time=11 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount11,sum((case when m.time=12 then m.amount else 0 end)), sum((case when m.time=12 then m.income1/datediff(m.release_date, date(m.created)) else 0 end)) amount12,round(sum(m.income1/datediff(m.release_date, date(m.created))),2) sumamount from (select a.user_id, a.time, round(b.rate*a.amount*DATEDIFF(a.release_date,DATE(a.created))/36500,2) as income1, a.release_date, a.created, a.amount from (select user_id, amount, time, created, release_date from regular_info where (date(created)<=\'"+str(day)+"\' and status=10) or (date(created)<=\'"+str(day)+"\' and date(modified)>\'"+str(day)+"\' and status=2 and release_date=DATE(modified))) a join (select distinct time, rate from regular_info where DATE(created)>='2017-02-01' and DATE(created)<'2017-03-01') b on a.time=b.time) m"
+    cursor.execute(sql)
+    datas = cursor.fetchall()
+    for data in datas:
+        writer.writerow(data)
+
+coon.close()
+csvfile.close()
